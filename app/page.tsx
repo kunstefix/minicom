@@ -5,6 +5,7 @@ import { Hero } from "@/components/hero";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ConnectSupabaseSteps } from "@/components/tutorial/connect-supabase-steps";
 import { SignUpUserSteps } from "@/components/tutorial/sign-up-user-steps";
+import { ChatLauncher } from "@/components/minicom/chat-launcher";
 import { hasEnvVars } from "@/lib/utils";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -37,6 +38,8 @@ export default function Home() {
             {hasEnvVars ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
           </main>
         </div>
+
+        <ChatLauncher />
 
         <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-16">
           <p>

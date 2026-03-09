@@ -2,8 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { getMessagesForThread } from "@/lib/supabase/queries";
 import {
-  getMessagesForThread,
   subscribeToThreadMessages,
   subscribeToThreadUpdates,
   unsubscribe,

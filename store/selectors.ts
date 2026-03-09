@@ -54,16 +54,27 @@ export function selectUnreadCount(
 ): number {
   let count = 0;
   for (const thread of Object.values(state.threadsById)) {
-    const key = `${thread.id}:${participantId}`;
-    const lastRead = state.threadReadByKey[key]?.lastReadAt;
-    const messages = state.messagesByThreadId[thread.id] ?? [];
-    const lastMsg = messages[messages.length - 1];
-    if (lastMsg && lastMsg.senderId !== participantId) {
-      if (!lastRead || new Date(lastMsg.createdAt) > new Date(lastRead))
-        count++;
-    }
+    if (selectUnreadCountForThread(state, thread.id, participantId) > 0)
+      count++;
   }
   return count;
+}
+
+export function selectUnreadCountForThread(
+  state: ChatState,
+  threadId: string,
+  participantId: string
+): number {
+  const key = `${threadId}:${participantId}`;
+  const lastRead = state.threadReadByKey[key]?.lastReadAt;
+  const messages = state.messagesByThreadId[threadId] ?? [];
+  if (!lastRead) {
+    return messages.filter((m) => m.senderId !== participantId).length;
+  }
+  const cutoff = new Date(lastRead).getTime();
+  return messages.filter(
+    (m) => m.senderId !== participantId && new Date(m.createdAt).getTime() > cutoff
+  ).length;
 }
 
 export function selectSelectedThread(state: ChatState): Thread | null {

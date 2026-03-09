@@ -43,6 +43,7 @@ export interface ChatActions {
   setInboxSortMode: (mode: InboxSortMode) => void;
   setConnectionState: (state: ConnectionState) => void;
   markThreadReadLocal: (threadId: string, participantId: string, lastReadAt: string) => void;
+  upsertParticipant: (participant: Participant) => void;
 }
 
 const threadReadKey = (threadId: string, participantId: string) =>
@@ -203,6 +204,14 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
       threadReadByKey: {
         ...state.threadReadByKey,
         [threadReadKey(threadId, participantId)]: { lastReadAt },
+      },
+    })),
+
+  upsertParticipant: (participant) =>
+    set((state) => ({
+      participantsById: {
+        ...state.participantsById,
+        [participant.id]: participant,
       },
     })),
 }));

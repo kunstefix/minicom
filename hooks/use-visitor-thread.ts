@@ -18,10 +18,10 @@ export function useVisitorThread() {
     setViewer,
     setVisitorThreadId,
     upsertThread,
+    upsertParticipant,
     hydrateMessages,
     upsertMessage,
     threadsById,
-    visitorThreadId,
   } = useChatStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -35,6 +35,7 @@ export function useVisitorThread() {
 
       const agent = await getDefaultAgent();
       if (!agent || cancelled) return;
+      upsertParticipant(agent);
 
       const supabase = createClient();
       const existing = Object.values(threadsById).find(
@@ -71,5 +72,6 @@ export function useVisitorThread() {
     };
   }, []);
 
+  const visitorThreadId = useChatStore((s) => s.visitorThreadId);
   return { visitorThreadId };
 }

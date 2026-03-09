@@ -96,7 +96,30 @@ If you wish to just develop locally and not deploy to Vercel, [follow the steps 
 
 6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
 
+7. **MiniCom (chat):** Apply the database schema and seed for the chat widget and agent inbox:
+
+   ```bash
+   # In Supabase SQL editor or CLI, run:
+   # 1. supabase/schema.sql
+   # 2. supabase/seed.sql
+   ```
+
+   Then run the app: visitor chat is available via the floating launcher on `/`; agent inbox at `/agent`.
+
 > Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
+
+## MiniCom overview
+
+This project extends the starter with **MiniCom**: a visitor chat widget and agent inbox.
+
+- **Visitor:** Floating chat launcher on the homepage; anonymous visitor identity (stored in `localStorage`); one thread per visitor–agent pair; realtime messages, presence, typing.
+- **Agent:** `/agent` route with inbox sidebar and thread panel; demo agent id `demo-agent` (seeded in `supabase/seed.sql`).
+
+**Stack:** Next.js App Router, Supabase (Realtime + Postgres), Zustand for client state, Zod for validation, shadcn/ui.
+
+**Architecture:** Thin routes; business logic in `lib/`, `store/`, `hooks/`; MiniCom UI under `components/minicom/`. Supabase client from the template is reused; no duplicate browser client.
+
+**Tests:** `pnpm test` runs Vitest; unit tests for store, reconciliation, and MessageComposer (Supabase mocked at boundaries).
 
 ## Feedback and issues
 

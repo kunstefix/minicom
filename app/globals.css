@@ -66,3 +66,5 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* MiniCom: extend only — widget and chat overrides as needed */

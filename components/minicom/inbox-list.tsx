@@ -101,7 +101,7 @@ export function InboxList({
                 <InboxListItem
                   thread={thread}
                   isSelected={selectedThreadId === thread.id}
-                  unreadCount={getUnread(thread)}
+                  unreadCount={selectedThreadId === thread.id ? 0 : getUnread(thread)}
                   preview={getPreview(thread)}
                   onClick={() => onSelectThread(thread.id)}
                 />

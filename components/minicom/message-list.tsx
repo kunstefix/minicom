@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef } from "react";
 import type { Message } from "@/types/chat";
 import type { Participant } from "@/types/chat";
 import { MessageItem } from "./message-item";
@@ -49,11 +49,9 @@ export function MessageList({
               sender={participantsById[msg.senderId]}
             />
           ))}
-          {showTyping && (
-            <div className="flex justify-start">
-              <TypingIndicator />
-            </div>
-          )}
+          <div className="flex justify-start">
+            <TypingIndicator visible={showTyping} />
+          </div>
         </>
       )}
     </div>

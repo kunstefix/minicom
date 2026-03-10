@@ -69,9 +69,9 @@ create trigger threads_updated_at
   before update on public.threads
   for each row execute function public.set_updated_at();
 
--- Realtime: add tables to publication (run if using Supabase hosted)
--- alter publication supabase_realtime add table public.messages;
--- alter publication supabase_realtime add table public.threads;
+-- Realtime: required for live message and thread updates (Supabase hosted)
+alter publication supabase_realtime add table public.messages;
+alter publication supabase_realtime add table public.threads;
 
 -- RLS: starter policies (allow anon for demo; tighten for production)
 alter table public.profiles enable row level security;

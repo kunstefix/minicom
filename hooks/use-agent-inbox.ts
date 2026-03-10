@@ -2,13 +2,14 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getThreadsForAgent } from "@/lib/supabase/queries";
+import { getThreadById, getThreadsForAgent } from "@/lib/supabase/queries";
 import { subscribeToInboxUpdates, unsubscribe } from "@/lib/supabase/subscriptions";
 import { useChatStore } from "@/store/chat-store";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export function useAgentInbox(agentId: string | null) {
-  const { hydrateThreads, setConnectionState } = useChatStore();
+  const { hydrateThreads, setConnectionState, upsertMessage, upsertThread } =
+    useChatStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
@@ -22,10 +23,20 @@ export function useAgentInbox(agentId: string | null) {
         const threads = await getThreadsForAgent(supabase, agentId);
         hydrateThreads(threads);
 
-        const ch = subscribeToInboxUpdates(supabase, agentId, async () => {
-          const next = await getThreadsForAgent(supabase, agentId);
-          hydrateThreads(next);
-        });
+        const ch = subscribeToInboxUpdates(
+          supabase,
+          agentId,
+          async () => {
+            const next = await getThreadsForAgent(supabase, agentId);
+            hydrateThreads(next);
+          },
+          async (message) => {
+            const thread = await getThreadById(supabase, message.threadId);
+            if (thread?.agentId !== agentId) return;
+            upsertThread(thread);
+            upsertMessage(message);
+          }
+        );
         channelRef.current = ch;
         setConnectionState("connected");
       } catch {
@@ -40,7 +51,13 @@ export function useAgentInbox(agentId: string | null) {
       }
       setConnectionState("disconnected");
     };
-  }, [agentId, hydrateThreads, setConnectionState]);
+  }, [
+    agentId,
+    hydrateThreads,
+    setConnectionState,
+    upsertMessage,
+    upsertThread,
+  ]);
 
   return {};
 }

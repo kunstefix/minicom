@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 export interface MessageComposerProps {
   onSend: (content: string) => void | Promise<void>;
+  onTypingChange?: (typing: boolean) => void;
   disabled?: boolean;
   placeholder?: string;
   className?: string;
@@ -13,6 +14,7 @@ export interface MessageComposerProps {
 
 export function MessageComposer({
   onSend,
+  onTypingChange,
   disabled = false,
   placeholder = "Type a message...",
   className,
@@ -20,12 +22,21 @@ export function MessageComposer({
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  useEffect(() => {
+    onTypingChange?.(value.trim().length > 0);
+  }, [value, onTypingChange]);
+
+  useEffect(() => {
+    return () => onTypingChange?.(false);
+  }, [onTypingChange]);
+
   const submit = useCallback(() => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
+    onTypingChange?.(false);
     onSend(trimmed);
     setValue("");
-  }, [value, disabled, onSend]);
+  }, [value, disabled, onSend, onTypingChange]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -33,6 +44,10 @@ export function MessageComposer({
       submit();
     }
   };
+
+  const handleBlur = useCallback(() => {
+    if (!value.trim()) onTypingChange?.(false);
+  }, [value, onTypingChange]);
 
   return (
     <div
@@ -45,6 +60,7 @@ export function MessageComposer({
         ref={textareaRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         disabled={disabled}

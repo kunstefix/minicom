@@ -11,7 +11,8 @@ import {
 import { useChatStore } from "@/store/chat-store";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
-const TYPING_DEBOUNCE_MS = 500;
+/** Send "typing" every this often while user is typing so the indicator stays visible */
+const TYPING_HEARTBEAT_MS = 400;
 
 export function useTypingBroadcast(
   threadId: string | null,
@@ -19,7 +20,7 @@ export function useTypingBroadcast(
   isTyping: boolean
 ) {
   const channelRef = useRef<RealtimeChannel | null>(null);
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!threadId || !participantId) return;
@@ -31,27 +32,29 @@ export function useTypingBroadcast(
     return () => {
       unsubscribeTyping(ch);
       channelRef.current = null;
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [threadId, participantId]);
 
   useEffect(() => {
     if (!threadId || !participantId || !channelRef.current) return;
 
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
 
     if (isTyping) {
       sendTypingStart(channelRef.current, threadId, participantId);
-      timeoutRef.current = setTimeout(() => {
-        sendTypingStop(channelRef.current!, threadId, participantId);
-        timeoutRef.current = null;
-      }, TYPING_DEBOUNCE_MS);
+      intervalRef.current = setInterval(() => {
+        sendTypingStart(channelRef.current!, threadId, participantId);
+      }, TYPING_HEARTBEAT_MS);
     } else {
       sendTypingStop(channelRef.current, threadId, participantId);
     }
 
     return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, [threadId, participantId, isTyping]);
 }

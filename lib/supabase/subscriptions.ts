@@ -53,7 +53,8 @@ export function subscribeToThreadUpdates(
 export function subscribeToInboxUpdates(
   supabase: SupabaseClient,
   agentId: string,
-  onUpdate: () => void
+  onUpdate: () => void,
+  onMessageInsert?: (message: Message) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel(`inbox:${agentId}`)
@@ -74,7 +75,13 @@ export function subscribeToInboxUpdates(
         schema: "public",
         table: "messages",
       },
-      () => onUpdate()
+      (payload) => {
+        if (onMessageInsert && payload.new) {
+          const row = payload.new as Parameters<typeof mapMessageRowToMessage>[0];
+          onMessageInsert(mapMessageRowToMessage(row));
+        }
+        onUpdate();
+      }
     )
     .subscribe();
 

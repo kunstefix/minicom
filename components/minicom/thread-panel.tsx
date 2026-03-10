@@ -5,6 +5,8 @@ import { useChatStore } from "@/store/chat-store";
 import { selectMergedThreadMessages } from "@/store/selectors";
 import { useChatThread } from "@/hooks/use-chat-thread";
 import { useSendMessage } from "@/hooks/use-send-message";
+import { useTypingState } from "@/hooks/use-typing-state";
+import { useTypingBroadcast } from "@/hooks/use-typing-broadcast";
 import { MessageList } from "./message-list";
 import { MessageComposer } from "./message-composer";
 import { ThreadHeader } from "./thread-header";
@@ -48,6 +50,8 @@ export function ThreadPanel({
   );
 
   const { send } = useSendMessage(threadId);
+  const { isTyping, setTyping } = useTypingState();
+  useTypingBroadcast(threadId, viewer?.id ?? null, isTyping);
 
   if (!threadId) {
     return (
@@ -104,6 +108,7 @@ export function ThreadPanel({
       />
       <MessageComposer
         onSend={async (content) => { await send(content); }}
+        onTypingChange={setTyping}
         disabled={connectionState !== "connected"}
       />
     </div>

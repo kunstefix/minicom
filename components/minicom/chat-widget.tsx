@@ -97,10 +97,10 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
       />
       <MessageComposer
         onSend={async (content) => {
-          setTyping(true);
           await send(content);
           setTyping(false);
         }}
+        onTypingChange={setTyping}
         disabled={connectionState !== "connected"}
       />
     </Card>

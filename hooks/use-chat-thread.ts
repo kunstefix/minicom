@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getMessagesForThread } from "@/lib/supabase/queries";
+import { getMessagesForThread, markThreadRead } from "@/lib/supabase/queries";
 import {
   subscribeToThreadMessages,
   subscribeToThreadUpdates,
@@ -24,6 +24,7 @@ export function useChatThread(threadId: string | null) {
     setPresenceSnapshot,
     setTypingState,
     setConnectionState,
+    markThreadReadLocal,
     viewer,
   } = useChatStore();
   const channelsRef = useRef<RealtimeChannel[]>([]);
@@ -39,6 +40,9 @@ export function useChatThread(threadId: string | null) {
       try {
         const messages = await getMessagesForThread(supabase, threadId);
         hydrateMessages(threadId, messages);
+
+        await markThreadRead(supabase, threadId, viewer.id);
+        markThreadReadLocal(threadId, viewer.id, new Date().toISOString());
 
         const msgCh = subscribeToThreadMessages(supabase, threadId, (msg) => {
           upsertMessage(msg);
@@ -89,5 +93,5 @@ export function useChatThread(threadId: string | null) {
       channelsRef.current = [];
       setConnectionState("disconnected");
     };
-  }, [threadId, viewer?.id, hydrateMessages, upsertMessage, setPresenceSnapshot, setTypingState, setConnectionState]);
+  }, [threadId, viewer?.id, hydrateMessages, upsertMessage, setPresenceSnapshot, setTypingState, setConnectionState, markThreadReadLocal]);
 }

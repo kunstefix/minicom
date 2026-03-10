@@ -42,9 +42,16 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
     : null;
   const agent = agentId ? participantsById[agentId] : null;
 
+  const removeOptimisticMessage = useChatStore((s) => s.removeOptimisticMessage);
   const { send } = useSendMessage(visitorThreadId);
   const { isTyping, setTyping } = useTypingState();
   useTypingBroadcast(visitorThreadId ?? null, viewer?.id ?? null, isTyping);
+
+  const handleRetryMessage = (message: { threadId: string; clientId?: string | null; content: string }) => {
+    if (!message.clientId) return;
+    removeOptimisticMessage(message.threadId, message.clientId);
+    send(message.content);
+  };
 
   const typingByThread = useChatStore(
     useShallow((s) =>
@@ -93,6 +100,7 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
         currentUserId={viewer.id}
         participantsById={participantsById}
         showTyping={showTyping}
+        onRetryMessage={handleRetryMessage}
         className="flex-1"
       />
       <MessageComposer

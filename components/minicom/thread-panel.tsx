@@ -49,9 +49,16 @@ export function ThreadPanel({
     (p) => p.participantId !== viewer?.id
   );
 
+  const removeOptimisticMessage = useChatStore((s) => s.removeOptimisticMessage);
   const { send } = useSendMessage(threadId);
   const { isTyping, setTyping } = useTypingState();
   useTypingBroadcast(threadId, viewer?.id ?? null, isTyping);
+
+  const handleRetryMessage = (message: { threadId: string; clientId?: string | null; content: string }) => {
+    if (!message.clientId) return;
+    removeOptimisticMessage(message.threadId, message.clientId);
+    send(message.content);
+  };
 
   if (!threadId) {
     return (
@@ -104,6 +111,7 @@ export function ThreadPanel({
         currentUserId={viewer?.id ?? ""}
         participantsById={participantsById}
         showTyping={showTyping}
+        onRetryMessage={handleRetryMessage}
         className="flex-1"
       />
       <MessageComposer

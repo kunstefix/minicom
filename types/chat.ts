@@ -4,7 +4,7 @@
 
 export type ParticipantRole = "agent" | "visitor";
 
-export type MessageStatus = "sending" | "sent" | "delivered" | "failed";
+export type MessageStatus = "sending" | "sent" | "failed";
 
 export interface Participant {
   id: string;

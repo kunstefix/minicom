@@ -14,6 +14,8 @@ export interface MessageListProps {
   currentUserId: string;
   participantsById: Record<string, Participant>;
   showTyping?: boolean;
+  /** Called when user taps Retry on a failed message. */
+  onRetryMessage?: (message: Message) => void;
   className?: string;
 }
 
@@ -22,6 +24,7 @@ export function MessageList({
   currentUserId,
   participantsById,
   showTyping = false,
+  onRetryMessage,
   className,
 }: MessageListProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -47,6 +50,7 @@ export function MessageList({
               message={msg}
               isOwn={msg.senderId === currentUserId}
               sender={participantsById[msg.senderId]}
+              onRetry={onRetryMessage}
             />
           ))}
           <div className="flex justify-start">

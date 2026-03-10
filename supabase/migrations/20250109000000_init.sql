@@ -32,7 +32,7 @@ create table if not exists public.messages (
   thread_id uuid not null references public.threads(id) on delete cascade,
   sender_id text not null references public.profiles(id) on delete cascade,
   content text not null,
-  status text not null default 'sent' check (status in ('sending', 'sent', 'delivered', 'failed')),
+  status text not null default 'sent' check (status in ('sending', 'sent', 'failed')),
   client_id text,
   created_at timestamptz not null default now()
 );

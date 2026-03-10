@@ -162,14 +162,18 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
     }),
 
   markOptimisticMessageFailed: (threadId, clientId) =>
-    set((state) => ({
-      optimisticMessagesByThreadId: {
-        ...state.optimisticMessagesByThreadId,
-        [threadId]: (state.optimisticMessagesByThreadId[threadId] ?? []).filter(
-          (m) => m.clientId !== clientId
-        ),
-      },
-    })),
+    set((state) => {
+      const list = state.optimisticMessagesByThreadId[threadId] ?? [];
+      const next = list.map((m) =>
+        m.clientId === clientId ? { ...m, status: "failed" as const } : m
+      );
+      return {
+        optimisticMessagesByThreadId: {
+          ...state.optimisticMessagesByThreadId,
+          [threadId]: next,
+        },
+      };
+    }),
 
   removeOptimisticMessage: (threadId, clientId) =>
     set((state) => ({

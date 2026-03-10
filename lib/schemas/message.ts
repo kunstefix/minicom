@@ -1,11 +1,6 @@
 import { z } from "zod";
 
-export const messageStatusSchema = z.enum([
-  "sending",
-  "sent",
-  "delivered",
-  "failed",
-]);
+export const messageStatusSchema = z.enum(["sending", "sent", "failed"]);
 
 export const messageSchema = z.object({
   id: z.string(),

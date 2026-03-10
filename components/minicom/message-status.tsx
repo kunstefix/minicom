@@ -1,24 +1,52 @@
 import type { MessageStatus } from "@/types/chat";
 import { cn } from "@/lib/utils";
+import { Loader2, Check, XCircle } from "lucide-react";
 
 export interface MessageStatusProps {
   status: MessageStatus;
+  /** Optional label (e.g. "Sending", "Sent", "Failed") for accessibility/clarity. */
+  showLabel?: boolean;
   className?: string;
 }
 
-export function MessageStatusDot({ status, className }: MessageStatusProps) {
+const STATUS_LABELS: Record<MessageStatus, string> = {
+  sending: "Sending",
+  sent: "Sent",
+  failed: "Failed",
+};
+
+export function MessageStatusDot({
+  status,
+  showLabel = false,
+  className,
+}: MessageStatusProps) {
+  const iconClassName = cn(
+    "shrink-0",
+    status === "sending" && "text-amber-500 animate-spin",
+    status === "sent" && "text-muted-foreground/70",
+    status === "failed" && "text-destructive"
+  );
+
   return (
     <span
-      className={cn(
-        "inline-block size-1.5 rounded-full shrink-0",
-        status === "sending" && "bg-amber-500 animate-pulse",
-        status === "sent" && "bg-muted-foreground/50",
-        status === "delivered" && "bg-green-500",
-        status === "failed" && "bg-destructive",
-        className
+      className={cn("inline-flex items-center gap-1", className)}
+      title={STATUS_LABELS[status]}
+      aria-label={STATUS_LABELS[status]}
+    >
+      {status === "sending" && (
+        <Loader2 className={cn(iconClassName, "size-3")} aria-hidden />
       )}
-      title={status}
-      aria-hidden
-    />
+      {status === "sent" && (
+        <Check className={cn(iconClassName, "size-3")} aria-hidden />
+      )}
+      {status === "failed" && (
+        <XCircle className={cn(iconClassName, "size-3")} aria-hidden />
+      )}
+      {showLabel && (
+        <span className="text-[10px] opacity-80 capitalize">
+          {STATUS_LABELS[status]}
+        </span>
+      )}
+    </span>
   );
 }

@@ -151,7 +151,7 @@ export function InboxList({
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className="pb-1"
+                  className="h-full"
                 >
                   <InboxListItem
                     thread={thread}

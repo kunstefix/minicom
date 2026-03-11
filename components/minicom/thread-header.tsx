@@ -22,7 +22,7 @@ export function ThreadHeader({
   return (
     <div
       className={cn(
-        "flex items-center gap-2 border-b border-border px-3 py-2",
+        "flex h-12 shrink-0 items-center gap-2 border-b border-border px-3 py-2",
         className
       )}
     >

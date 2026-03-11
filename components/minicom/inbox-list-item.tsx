@@ -26,8 +26,8 @@ export function InboxListItem({
       type="button"
       onClick={onClick}
       className={cn(
-        "flex w-full items-center justify-between gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50",
-        isSelected && "bg-muted",
+        "flex h-full min-h-[72px] w-full items-center justify-between gap-2 border-b border-border px-3 text-left transition-colors hover:bg-muted/50",
+        isSelected && "bg-muted/50",
         className
       )}
     >
@@ -41,9 +41,9 @@ export function InboxListItem({
         >
           Thread {thread.visitorId.slice(0, 8)}…
         </p>
-        {preview && (
-          <p className="truncate text-xs text-muted-foreground">{preview}</p>
-        )}
+        <p className="min-h-5 truncate text-xs text-muted-foreground">
+          {preview ?? "\u00A0"}
+        </p>
       </div>
       {unreadCount > 0 && <UnreadBadge count={unreadCount} />}
     </button>

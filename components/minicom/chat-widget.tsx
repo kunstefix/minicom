@@ -22,10 +22,12 @@ const EMPTY_TYPING: never[] = [];
 
 export interface ChatWidgetProps {
   onClose?: () => void;
+  /** Key to reset message list when widget is re-opened (e.g. openKey from launcher). */
+  listKey?: number;
   className?: string;
 }
 
-export function ChatWidget({ onClose, className }: ChatWidgetProps) {
+export function ChatWidget({ onClose, listKey, className }: ChatWidgetProps) {
   const { visitorThreadId } = useVisitorThread();
   useChatThread(visitorThreadId);
 
@@ -116,6 +118,7 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
         <OfflineBanner className="mx-2 mt-2" />
       )}
       <MessageList
+        key={listKey != null ? `${visitorThreadId ?? "n"}-${listKey}` : undefined}
         messages={messages}
         currentUserId={viewer.id}
         participantsById={participantsById}

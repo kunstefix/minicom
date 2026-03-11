@@ -27,7 +27,7 @@ export function useChatThread(threadId: string | null) {
   const presenceCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    if (!threadId || !viewer) return;
+    if (!threadId) return;
 
     const supabase = createClient();
     const channels: RealtimeChannel[] = [];
@@ -45,8 +45,10 @@ export function useChatThread(threadId: string | null) {
         const messages = await getMessagesForThread(supabase, threadId);
         hydrateMessages(threadId, messages);
 
-        await markThreadRead(supabase, threadId, viewer.id);
-        markThreadReadLocal(threadId, viewer.id, new Date().toISOString());
+        if (viewer?.id) {
+          await markThreadRead(supabase, threadId, viewer.id);
+          markThreadReadLocal(threadId, viewer.id, new Date().toISOString());
+        }
 
         const msgCh = subscribeToThreadMessages(
           supabase,
@@ -61,12 +63,14 @@ export function useChatThread(threadId: string | null) {
         });
         channels.push(updCh);
 
-        presenceCleanupRef.current = subscribeToThreadPresence(
-          supabase,
-          threadId,
-          viewer.id,
-          (list) => setPresenceSnapshot(threadId, list)
-        );
+        if (viewer?.id) {
+          presenceCleanupRef.current = subscribeToThreadPresence(
+            supabase,
+            threadId,
+            viewer.id,
+            (list) => setPresenceSnapshot(threadId, list)
+          );
+        }
 
         const typingCh = subscribeToTyping(supabase, threadId, (payload) => {
           const current =

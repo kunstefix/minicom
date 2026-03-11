@@ -24,6 +24,7 @@ export interface ChatLauncherProps {
 export function ChatLauncher({ className }: ChatLauncherProps) {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
+  const [openKey, setOpenKey] = useState(0);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const messageChannelRef = useRef<RealtimeChannel | null>(null);
 
@@ -58,6 +59,7 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
     if (closing) return;
     const next = !open;
     setOpen(next);
+    if (next) setOpenKey((k) => k + 1);
     saveWidgetOpen(next);
   };
 
@@ -140,7 +142,7 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
             )}
             onAnimationEnd={handleAnimationEnd}
           >
-            <ChatWidget onClose={close} />
+            <ChatWidget onClose={close} listKey={openKey} />
           </div>
         </>
       )}

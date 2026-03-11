@@ -13,7 +13,8 @@ export function useAutoScroll<T>(
 
   useEffect(() => {
     if (ref.current && prevRef.current !== scrollWhen) {
-      ref.current.scrollTop = ref.current.scrollHeight;
+      const el = ref.current;
+      el.scrollTop = el.scrollHeight - el.clientHeight;
       prevRef.current = scrollWhen;
     }
   }, [ref, scrollWhen]);

@@ -114,6 +114,7 @@ export function ThreadPanel({
         onBack={onBack}
       />
       <MessageList
+        key={threadId}
         messages={messages}
         currentUserId={viewer?.id ?? ""}
         participantsById={participantsById}

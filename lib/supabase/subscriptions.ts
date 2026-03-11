@@ -3,10 +3,14 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Message } from "@/types/chat";
 import { mapMessageRowToMessage } from "./mappers";
 
+/** Realtime subscribe status: SUBSCRIBED | CLOSED | CHANNEL_ERROR | TIMED_OUT */
+export type RealtimeSubscribeStatus = string;
+
 export function subscribeToThreadMessages(
   supabase: SupabaseClient,
   threadId: string,
-  onInsert: (message: Message) => void
+  onInsert: (message: Message) => void,
+  onStatus?: (status: RealtimeSubscribeStatus) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel(`thread:${threadId}:messages`)
@@ -23,7 +27,9 @@ export function subscribeToThreadMessages(
         onInsert(mapMessageRowToMessage(row));
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      onStatus?.(status);
+    });
 
   return channel;
 }
@@ -54,7 +60,8 @@ export function subscribeToInboxUpdates(
   supabase: SupabaseClient,
   agentId: string,
   onUpdate: () => void,
-  onMessageInsert?: (message: Message) => void
+  onMessageInsert?: (message: Message) => void,
+  onStatus?: (status: RealtimeSubscribeStatus) => void
 ): RealtimeChannel {
   const channel = supabase
     .channel(`inbox:${agentId}`)
@@ -83,7 +90,9 @@ export function subscribeToInboxUpdates(
         onUpdate();
       }
     )
-    .subscribe();
+    .subscribe((status) => {
+      onStatus?.(status);
+    });
 
   return channel;
 }

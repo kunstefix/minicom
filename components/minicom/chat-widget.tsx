@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect } from "react";
 import { useShallow } from "zustand/react/shallow";
 import { useChatStore } from "@/store/chat-store";
 import { selectMergedThreadMessages } from "@/store/selectors";
@@ -30,6 +31,13 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
 
   const viewer = useChatStore((s) => s.viewer);
   const connectionState = useChatStore((s) => s.connectionState);
+  const hadConnectionRef = useRef(false);
+  useEffect(() => {
+    if (connectionState === "connected") hadConnectionRef.current = true;
+  }, [connectionState]);
+  const showOfflineBanner =
+    connectionState === "disconnected" && hadConnectionRef.current;
+
   const participantsById = useChatStore((s) => s.participantsById);
   const messages = useChatStore(
     useShallow((s) =>
@@ -104,7 +112,7 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
         }
         onClose={onClose}
       />
-      {connectionState === "disconnected" && (
+      {showOfflineBanner && (
         <OfflineBanner className="mx-2 mt-2" />
       )}
       <MessageList
@@ -121,7 +129,6 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
           setTyping(false);
         }}
         onTypingChange={setTyping}
-        disabled={connectionState !== "connected"}
       />
     </Card>
   );

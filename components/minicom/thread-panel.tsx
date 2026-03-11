@@ -124,7 +124,6 @@ export function ThreadPanel({
       <MessageComposer
         onSend={async (content) => { await send(content); }}
         onTypingChange={setTyping}
-        disabled={connectionState !== "connected"}
       />
     </div>
   );

@@ -26,6 +26,13 @@ export function useAgentInbox(agentId: string | null) {
 
     const supabase = createClient();
 
+    const handleRealtimeStatus = (status: string) => {
+      if (status === "SUBSCRIBED") setConnectionState("connected");
+      if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        setConnectionState("disconnected");
+      }
+    };
+
     (async () => {
       setConnectionState("connecting");
       try {
@@ -49,10 +56,11 @@ export function useAgentInbox(agentId: string | null) {
               message.threadId,
               message.content.slice(0, 50) || null
             );
-          }
+          },
+          handleRealtimeStatus
         );
         channelRef.current = ch;
-        setConnectionState("connected");
+        // "connected" is set by handleRealtimeStatus when channel reports SUBSCRIBED
       } catch {
         setConnectionState("error");
       }

@@ -35,6 +35,13 @@ export function useChatThread(threadId: string | null) {
     const supabase = createClient();
     const channels: RealtimeChannel[] = [];
 
+    const handleRealtimeStatus = (status: string) => {
+      if (status === "SUBSCRIBED") setConnectionState("connected");
+      if (status === "CLOSED" || status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        setConnectionState("disconnected");
+      }
+    };
+
     (async () => {
       setConnectionState("connecting");
       try {
@@ -44,9 +51,12 @@ export function useChatThread(threadId: string | null) {
         await markThreadRead(supabase, threadId, viewer.id);
         markThreadReadLocal(threadId, viewer.id, new Date().toISOString());
 
-        const msgCh = subscribeToThreadMessages(supabase, threadId, (msg) => {
-          upsertMessage(msg);
-        });
+        const msgCh = subscribeToThreadMessages(
+          supabase,
+          threadId,
+          (msg) => upsertMessage(msg),
+          handleRealtimeStatus
+        );
         channels.push(msgCh);
 
         const updCh = subscribeToThreadUpdates(supabase, threadId, () => {
@@ -80,7 +90,7 @@ export function useChatThread(threadId: string | null) {
         channels.push(typingCh);
 
         channelsRef.current = channels;
-        setConnectionState("connected");
+        // "connected" is set by handleRealtimeStatus when channel reports SUBSCRIBED
       } catch {
         setConnectionState("error");
       }

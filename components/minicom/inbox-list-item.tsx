@@ -12,6 +12,8 @@ export interface InboxListItemProps {
   preview?: string | null;
   /** Last message createdAt (ISO) for preview timestamp. */
   lastMessageCreatedAt?: string | null;
+  /** Whether the thread's visitor is currently online. */
+  isVisitorOnline?: boolean;
   onClick?: () => void;
   tabIndex?: number;
   onFocus?: () => void;
@@ -24,6 +26,7 @@ export function InboxListItem({
   unreadCount = 0,
   preview,
   lastMessageCreatedAt,
+  isVisitorOnline = false,
   onClick,
   tabIndex,
   onFocus,
@@ -48,12 +51,21 @@ export function InboxListItem({
         className
       )}
     >
-      <div
-        className="flex size-10 shrink-0 items-center justify-center rounded-full text-xs font-medium text-white"
-        style={{ backgroundColor: `hsl(${hue}, 65%, 45%)` }}
-        aria-hidden
-      >
-        {initials}
+      <div className="relative shrink-0">
+        <div
+          className="flex size-10 items-center justify-center rounded-full text-xs font-medium text-white"
+          style={{ backgroundColor: `hsl(${hue}, 65%, 45%)` }}
+          aria-hidden
+        >
+          {initials}
+        </div>
+        <span
+          className={cn(
+            "absolute bottom-0 right-0 size-2.5 rounded-full border-2 border-background",
+            isVisitorOnline ? "bg-green-500" : "bg-muted-foreground/50"
+          )}
+          aria-label={isVisitorOnline ? "Online" : "Offline"}
+        />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center justify-between gap-2">

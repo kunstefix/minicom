@@ -8,12 +8,8 @@ import {
   subscribeToThreadUpdates,
   unsubscribe,
 } from "@/lib/supabase/subscriptions";
-import {
-  joinThreadPresence,
-  onThreadPresenceSync,
-  leaveThreadPresence,
-} from "@/lib/supabase/presence";
-import { subscribeToTyping, unsubscribeTyping } from "@/lib/supabase/typing";
+import { subscribeToThreadPresence } from "@/lib/supabase/presence";
+import { subscribeToTyping } from "@/lib/supabase/typing";
 import { useChatStore } from "@/store/chat-store";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -28,6 +24,7 @@ export function useChatThread(threadId: string | null) {
     viewer,
   } = useChatStore();
   const channelsRef = useRef<RealtimeChannel[]>([]);
+  const presenceCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (!threadId || !viewer) return;
@@ -64,17 +61,12 @@ export function useChatThread(threadId: string | null) {
         });
         channels.push(updCh);
 
-        const presenceCh = joinThreadPresence(
+        presenceCleanupRef.current = subscribeToThreadPresence(
           supabase,
           threadId,
           viewer.id,
-          "online"
+          (list) => setPresenceSnapshot(threadId, list)
         );
-        channels.push(presenceCh);
-        onThreadPresenceSync(presenceCh, (state) => {
-          const list = Object.values(state).flat();
-          setPresenceSnapshot(threadId, list);
-        });
 
         const typingCh = subscribeToTyping(supabase, threadId, (payload) => {
           const current =
@@ -97,11 +89,13 @@ export function useChatThread(threadId: string | null) {
     })();
 
     return () => {
+      presenceCleanupRef.current?.();
+      presenceCleanupRef.current = null;
       Promise.all(
         channelsRef.current.map((ch) => unsubscribe(ch))
       ).catch(() => {});
       channelsRef.current = [];
       setConnectionState("disconnected");
     };
-  }, [threadId, viewer?.id, hydrateMessages, upsertMessage, setPresenceSnapshot, setTypingState, setConnectionState, markThreadReadLocal]);
+  }, [threadId, viewer, hydrateMessages, upsertMessage, setPresenceSnapshot, setTypingState, setConnectionState, markThreadReadLocal]);
 }

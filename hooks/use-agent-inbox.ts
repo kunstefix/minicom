@@ -7,12 +7,16 @@ import {
   getThreadsForAgentWithPreview,
 } from "@/lib/supabase/queries";
 import { subscribeToInboxUpdates, unsubscribe } from "@/lib/supabase/subscriptions";
+import { subscribeToThreadPresence } from "@/lib/supabase/presence";
 import { useChatStore } from "@/store/chat-store";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+
+const MAX_PRESENCE_THREADS = 40;
 
 export function useAgentInbox(agentId: string | null) {
   const {
     hydrateThreads,
+    setPresenceSnapshot,
     setConnectionState,
     upsertMessage,
     upsertThread,
@@ -20,6 +24,8 @@ export function useAgentInbox(agentId: string | null) {
     setThreadPreview,
   } = useChatStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
+  const presenceCleanupsRef = useRef<(() => void)[]>([]);
+  const subscribedPresenceIdsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     if (!agentId) return;
@@ -33,11 +39,27 @@ export function useAgentInbox(agentId: string | null) {
       }
     };
 
+    function subscribePresenceForThreads(threads: { id: string }[], agent: string) {
+      for (const thread of threads.slice(0, MAX_PRESENCE_THREADS)) {
+        if (subscribedPresenceIdsRef.current.has(thread.id)) continue;
+        subscribedPresenceIdsRef.current.add(thread.id);
+        const threadId = thread.id;
+        const cleanup = subscribeToThreadPresence(
+          supabase,
+          threadId,
+          agent,
+          (list) => setPresenceSnapshot(threadId, list)
+        );
+        presenceCleanupsRef.current.push(cleanup);
+      }
+    }
+
     (async () => {
       setConnectionState("connecting");
       try {
         const threads = await getThreadsForAgentWithPreview(supabase, agentId);
         hydrateThreads(threads);
+        subscribePresenceForThreads(threads, agentId);
 
         const ch = subscribeToInboxUpdates(
           supabase,
@@ -45,6 +67,7 @@ export function useAgentInbox(agentId: string | null) {
           async () => {
             const next = await getThreadsForAgentWithPreview(supabase, agentId);
             hydrateThreads(next);
+            subscribePresenceForThreads(next, agentId);
           },
           async (message) => {
             const thread = await getThreadById(supabase, message.threadId);
@@ -67,6 +90,10 @@ export function useAgentInbox(agentId: string | null) {
     })();
 
     return () => {
+      const cleanups = presenceCleanupsRef.current;
+      presenceCleanupsRef.current = [];
+      cleanups.forEach((c) => c());
+      subscribedPresenceIdsRef.current.clear();
       if (channelRef.current) {
         unsubscribe(channelRef.current);
         channelRef.current = null;
@@ -76,6 +103,7 @@ export function useAgentInbox(agentId: string | null) {
   }, [
     agentId,
     hydrateThreads,
+    setPresenceSnapshot,
     setConnectionState,
     upsertMessage,
     upsertThread,

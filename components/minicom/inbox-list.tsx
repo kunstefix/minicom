@@ -31,6 +31,7 @@ export function InboxList({
   const setInboxSortMode = useChatStore((s) => s.setInboxSortMode);
   const messagesByThreadId = useChatStore((s) => s.messagesByThreadId);
   const threadReadByKey = useChatStore((s) => s.threadReadByKey);
+  const presenceByThreadId = useChatStore((s) => s.presenceByThreadId);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
   const [focusedIndex, setFocusedIndex] = useState(0);
@@ -68,6 +69,14 @@ export function InboxList({
       const last = msgs[msgs.length - 1];
       return last?.createdAt ?? null;
     })();
+
+  const getVisitorOnline = useCallback(
+    (thread: Thread) =>
+      (presenceByThreadId[thread.id] ?? []).some(
+        (p) => p.participantId === thread.visitorId
+      ),
+    [presenceByThreadId]
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -163,6 +172,7 @@ export function InboxList({
                     }
                     preview={getPreview(thread)}
                     lastMessageCreatedAt={getLastMessageCreatedAt(thread)}
+                    isVisitorOnline={getVisitorOnline(thread)}
                     onClick={() => onSelectThread(thread.id)}
                     tabIndex={focusedIndex === virtualRow.index ? 0 : -1}
                     onFocus={() => setFocusedIndex(virtualRow.index)}

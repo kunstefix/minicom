@@ -10,6 +10,8 @@ export interface InboxListItemProps {
   unreadCount?: number;
   preview?: string | null;
   onClick?: () => void;
+  tabIndex?: number;
+  onFocus?: () => void;
   className?: string;
 }
 
@@ -19,12 +21,16 @@ export function InboxListItem({
   unreadCount = 0,
   preview,
   onClick,
+  tabIndex,
+  onFocus,
   className,
 }: InboxListItemProps) {
   return (
     <button
       type="button"
       onClick={onClick}
+      tabIndex={tabIndex}
+      onFocus={onFocus}
       className={cn(
         "flex h-full min-h-[72px] w-full items-center justify-between gap-2 border-b border-border px-3 text-left transition-colors hover:bg-muted/50",
         isSelected && "bg-muted/50",

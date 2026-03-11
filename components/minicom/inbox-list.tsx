@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useEffect } from "react";
+import { useCallback, useRef, useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Thread } from "@/types/chat";
 import { useShallow } from "zustand/react/shallow";
@@ -33,7 +33,7 @@ export function InboxList({
   const threadReadByKey = useChatStore((s) => s.threadReadByKey);
   const scrollRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const focusedIndexRef = useRef(0);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
   const rowVirtualizer = useVirtualizer({
     count: threads.length,
@@ -66,40 +66,34 @@ export function InboxList({
       if (threads.length === 0) return;
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        focusedIndexRef.current = Math.min(
-          focusedIndexRef.current + 1,
-          threads.length - 1
-        );
-        rowVirtualizer.scrollToIndex(focusedIndexRef.current);
+        const next = Math.min(focusedIndex + 1, threads.length - 1);
+        setFocusedIndex(next);
+        rowVirtualizer.scrollToIndex(next);
         setTimeout(() => {
-          rowRefs.current
-            .get(focusedIndexRef.current)
-            ?.querySelector("button")
-            ?.focus();
+          rowRefs.current.get(next)?.querySelector("button")?.focus();
         }, 0);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
-        focusedIndexRef.current = Math.max(focusedIndexRef.current - 1, 0);
-        rowVirtualizer.scrollToIndex(focusedIndexRef.current);
+        const prev = Math.max(focusedIndex - 1, 0);
+        setFocusedIndex(prev);
+        rowVirtualizer.scrollToIndex(prev);
         setTimeout(() => {
-          rowRefs.current
-            .get(focusedIndexRef.current)
-            ?.querySelector("button")
-            ?.focus();
+          rowRefs.current.get(prev)?.querySelector("button")?.focus();
         }, 0);
       } else if (e.key === "Enter" && selectedThreadId) {
         const idx = threads.findIndex((t) => t.id === selectedThreadId);
         if (idx >= 0) {
+          setFocusedIndex(idx);
           rowRefs.current.get(idx)?.querySelector("button")?.focus();
         }
       }
     },
-    [threads.length, threads, selectedThreadId, rowVirtualizer]
+    [threads.length, threads, selectedThreadId, rowVirtualizer, focusedIndex]
   );
 
   useEffect(() => {
-    focusedIndexRef.current = threads.findIndex((t) => t.id === selectedThreadId);
-    if (focusedIndexRef.current < 0) focusedIndexRef.current = 0;
+    const idx = threads.findIndex((t) => t.id === selectedThreadId);
+    setFocusedIndex(idx >= 0 ? idx : 0);
   }, [threads, selectedThreadId]);
 
   const virtualItems = rowVirtualizer.getVirtualItems();
@@ -161,6 +155,8 @@ export function InboxList({
                     }
                     preview={getPreview(thread)}
                     onClick={() => onSelectThread(thread.id)}
+                    tabIndex={focusedIndex === virtualRow.index ? 0 : -1}
+                    onFocus={() => setFocusedIndex(virtualRow.index)}
                   />
                 </div>
               );

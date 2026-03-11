@@ -22,6 +22,8 @@ export interface Thread {
   createdAt: string;
   updatedAt: string;
   lastMessageAt?: string | null;
+  /** First ~50 chars of latest message; from inbox query or set when message sent/received. */
+  preview?: string | null;
 }
 
 export interface Message {

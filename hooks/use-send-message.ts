@@ -14,6 +14,8 @@ export function useSendMessage(threadId: string | null) {
     reconcileOptimisticMessage,
     markOptimisticMessageFailed,
     removeOptimisticMessage,
+    bumpThreadUpdatedAt,
+    setThreadPreview,
   } = useChatStore();
 
   const send = useCallback(
@@ -30,6 +32,8 @@ export function useSendMessage(threadId: string | null) {
         createdAt: new Date().toISOString(),
       };
       addOptimisticMessage(threadId, optimistic);
+      bumpThreadUpdatedAt(threadId);
+      setThreadPreview(threadId, content.slice(0, 50) || null);
 
       const supabase = createClient();
       try {
@@ -53,6 +57,8 @@ export function useSendMessage(threadId: string | null) {
       addOptimisticMessage,
       reconcileOptimisticMessage,
       markOptimisticMessageFailed,
+      bumpThreadUpdatedAt,
+      setThreadPreview,
     ]
   );
 

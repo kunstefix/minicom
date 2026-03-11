@@ -23,20 +23,22 @@ export function selectMergedThreadMessages(
 
 /**
  * Sorted inbox threads (for agent view). Uses inboxSortMode.
+ * - "recent": all threads, sorted by updatedAt desc.
+ * - "unread": threads with unread messages plus the currently selected thread (so it stays visible until you pick another), sorted by updatedAt desc.
  */
 export function selectSortedInbox(
   state: ChatState,
   agentId: string
 ): Thread[] {
-  const threads = Object.values(state.threadsById).filter(
+  let threads = Object.values(state.threadsById).filter(
     (t) => t.agentId === agentId
   );
   if (state.inboxSortMode === "unread") {
-    const readKey = (t: Thread) =>
-      state.threadReadByKey[`${t.id}:${agentId}`]?.lastReadAt ?? "";
-    return [...threads].sort(
-      (a, b) =>
-        new Date(readKey(b)).getTime() - new Date(readKey(a)).getTime()
+    const selectedId = state.selectedThreadId;
+    threads = threads.filter(
+      (t) =>
+        t.id === selectedId ||
+        selectUnreadCountForThread(state, t.id, agentId) > 0
     );
   }
   return [...threads].sort(

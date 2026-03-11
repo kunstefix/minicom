@@ -32,7 +32,13 @@ export function InboxListItem({
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
+        <p
+          className="truncate text-sm font-medium"
+          style={{
+            color: `hsl(${Array.from(thread.visitorId)
+              .reduce((acc, char) => acc + char.charCodeAt(0), 0) % 360}, 70%, 60%)`,
+          }}
+        >
           Thread {thread.visitorId.slice(0, 8)}…
         </p>
         {preview && (

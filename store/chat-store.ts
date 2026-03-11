@@ -36,6 +36,8 @@ export interface ChatActions {
   reconcileOptimisticMessage: (threadId: string, clientId: string, serverMessage: Message) => void;
   markOptimisticMessageFailed: (threadId: string, clientId: string) => void;
   removeOptimisticMessage: (threadId: string, clientId: string) => void;
+  bumpThreadUpdatedAt: (threadId: string) => void;
+  setThreadPreview: (threadId: string, preview: string | null) => void;
   selectThread: (threadId: string | null) => void;
   setVisitorThreadId: (threadId: string | null) => void;
   setPresenceSnapshot: (threadId: string, presence: PresencePayload[]) => void;
@@ -88,10 +90,17 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
 
   hydrateThreads: (threads) =>
     set((state) => ({
-      threadsById: threads.reduce(
-        (acc, t) => upsertThreadInto(acc, t),
-        { ...state.threadsById }
-      ),
+      threadsById: threads.reduce((acc, t) => {
+        const existing = acc[t.id];
+        if (
+          existing &&
+          new Date(existing.updatedAt).getTime() >
+            new Date(t.updatedAt).getTime()
+        ) {
+          return acc;
+        }
+        return { ...acc, [t.id]: t };
+      }, { ...state.threadsById }),
     })),
 
   hydrateMessages: (threadId, messages) =>
@@ -105,9 +114,35 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
     })),
 
   upsertThread: (thread) =>
-    set((state) => ({
-      threadsById: upsertThreadInto({ ...state.threadsById }, thread),
-    })),
+    set((state) => {
+      const existing = state.threadsById[thread.id];
+      if (
+        existing &&
+        new Date(existing.updatedAt).getTime() >
+          new Date(thread.updatedAt).getTime()
+      ) {
+        return state;
+      }
+      const merged =
+        thread.preview != null
+          ? thread
+          : { ...thread, preview: existing?.preview ?? null };
+      return {
+        threadsById: upsertThreadInto({ ...state.threadsById }, merged),
+      };
+    }),
+
+  setThreadPreview: (threadId, preview) =>
+    set((state) => {
+      const thread = state.threadsById[threadId];
+      if (!thread) return state;
+      return {
+        threadsById: {
+          ...state.threadsById,
+          [threadId]: { ...thread, preview },
+        },
+      };
+    }),
 
   upsertThreads: (threads) =>
     set((state) => {
@@ -155,6 +190,9 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
       const nextMessages = hasId
         ? existing
         : [...existing, serverMessage];
+      const byCreated = (a: Message, b: Message) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      nextMessages.sort(byCreated);
       return {
         optimisticMessagesByThreadId: nextOpt,
         messagesByThreadId: { ...state.messagesByThreadId, [threadId]: nextMessages },
@@ -185,6 +223,18 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
       },
     })),
 
+  bumpThreadUpdatedAt: (threadId) =>
+    set((state) => {
+      const thread = state.threadsById[threadId];
+      if (!thread) return state;
+      return {
+        threadsById: {
+          ...state.threadsById,
+          [threadId]: { ...thread, updatedAt: new Date().toISOString() },
+        },
+      };
+    }),
+
   selectThread: (selectedThreadId) => set({ selectedThreadId }),
 
   setVisitorThreadId: (visitorThreadId) => set({ visitorThreadId }),
@@ -199,7 +249,11 @@ export const useChatStore = create<ChatState & ChatActions>((set) => ({
       typingByThreadId: { ...state.typingByThreadId, [threadId]: payloads },
     })),
 
-  setInboxSortMode: (inboxSortMode) => set({ inboxSortMode }),
+  setInboxSortMode: (inboxSortMode) =>
+    set((s) => ({
+      inboxSortMode,
+      ...(inboxSortMode === "unread" ? { selectedThreadId: null } : {}),
+    })),
 
   setConnectionState: (connectionState) => set({ connectionState }),
 

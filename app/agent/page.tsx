@@ -27,7 +27,7 @@ export default function AgentPage() {
 
   return (
     <main className="flex h-screen w-full">
-      <aside className="w-80 shrink-0 border-r border-border flex flex-col">
+      <aside className="flex w-80 shrink-0 flex-col min-h-0 border-r border-border">
         <div className="border-b border-border p-3">
           <h1 className="font-semibold">Inbox</h1>
         </div>

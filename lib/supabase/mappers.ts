@@ -22,6 +22,18 @@ export function mapThreadRowToThread(row: ThreadRow): Thread {
   };
 }
 
+/** Row from get_threads_for_agent_with_preview RPC (thread columns + preview). */
+export interface ThreadWithPreviewRow extends ThreadRow {
+  preview: string | null;
+}
+
+export function mapThreadWithPreviewRowToThread(row: ThreadWithPreviewRow): Thread {
+  return {
+    ...mapThreadRowToThread(row),
+    preview: row.preview ?? null,
+  };
+}
+
 export function mapMessageRowToMessage(row: MessageRow): Message {
   return {
     id: row.id,

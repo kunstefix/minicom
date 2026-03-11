@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useEffect } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import type { Thread } from "@/types/chat";
 import { useShallow } from "zustand/react/shallow";
 import { useChatStore } from "@/store/chat-store";
@@ -9,6 +10,8 @@ import { InboxListItem } from "./inbox-list-item";
 import { InboxToolbar } from "./inbox-toolbar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { cn } from "@/lib/utils";
+
+const ROW_HEIGHT = 72;
 
 export interface InboxListProps {
   agentId: string;
@@ -28,6 +31,16 @@ export function InboxList({
   const setInboxSortMode = useChatStore((s) => s.setInboxSortMode);
   const messagesByThreadId = useChatStore((s) => s.messagesByThreadId);
   const threadReadByKey = useChatStore((s) => s.threadReadByKey);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+  const focusedIndexRef = useRef(0);
+
+  const rowVirtualizer = useVirtualizer({
+    count: threads.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 5,
+  });
 
   const getUnread = useCallback(
     (thread: Thread) =>
@@ -40,14 +53,13 @@ export function InboxList({
       ),
     [messagesByThreadId, threadReadByKey, agentId]
   );
-  const getPreview = (thread: Thread) => {
-    const msgs = messagesByThreadId[thread.id] ?? [];
-    const last = msgs[msgs.length - 1];
-    return last?.content?.slice(0, 50) ?? null;
-  };
-
-  const listRef = useRef<HTMLUListElement>(null);
-  const focusedIndexRef = useRef(0);
+  const getPreview = (thread: Thread) =>
+    thread.preview ??
+    (() => {
+      const msgs = messagesByThreadId[thread.id] ?? [];
+      const last = msgs[msgs.length - 1];
+      return last?.content?.slice(0, 50) ?? null;
+    })();
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -58,21 +70,31 @@ export function InboxList({
           focusedIndexRef.current + 1,
           threads.length - 1
         );
-        (listRef.current?.children[focusedIndexRef.current] as HTMLElement)
-          ?.querySelector("button")
-          ?.focus();
+        rowVirtualizer.scrollToIndex(focusedIndexRef.current);
+        setTimeout(() => {
+          rowRefs.current
+            .get(focusedIndexRef.current)
+            ?.querySelector("button")
+            ?.focus();
+        }, 0);
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         focusedIndexRef.current = Math.max(focusedIndexRef.current - 1, 0);
-        (listRef.current?.children[focusedIndexRef.current] as HTMLElement)
-          ?.querySelector("button")
-          ?.focus();
+        rowVirtualizer.scrollToIndex(focusedIndexRef.current);
+        setTimeout(() => {
+          rowRefs.current
+            .get(focusedIndexRef.current)
+            ?.querySelector("button")
+            ?.focus();
+        }, 0);
       } else if (e.key === "Enter" && selectedThreadId) {
         const idx = threads.findIndex((t) => t.id === selectedThreadId);
-        if (idx >= 0) (listRef.current?.children[idx] as HTMLElement)?.querySelector("button")?.focus();
+        if (idx >= 0) {
+          rowRefs.current.get(idx)?.querySelector("button")?.focus();
+        }
       }
     },
-    [threads.length, threads, selectedThreadId]
+    [threads.length, threads, selectedThreadId, rowVirtualizer]
   );
 
   useEffect(() => {
@@ -80,9 +102,11 @@ export function InboxList({
     if (focusedIndexRef.current < 0) focusedIndexRef.current = 0;
   }, [threads, selectedThreadId]);
 
+  const virtualItems = rowVirtualizer.getVirtualItems();
+
   return (
     <div
-      className={cn("flex flex-col", className)}
+      className={cn("flex min-h-0 flex-1 flex-col", className)}
       onKeyDown={handleKeyDown}
       role="listbox"
       aria-label="Conversations"
@@ -91,23 +115,57 @@ export function InboxList({
         sortMode={inboxSortMode}
         onSortModeChange={setInboxSortMode}
       />
-      <div className="flex-1 overflow-y-auto p-2">
+      <div
+        ref={scrollRef}
+        className="flex-1 min-h-0 overflow-y-auto p-2"
+        role="list"
+      >
         {threads.length === 0 ? (
-          <EmptyState title="No conversations" description="New threads will appear here." />
+          <EmptyState
+            title="No conversations"
+            description="New threads will appear here."
+          />
         ) : (
-          <ul className="flex flex-col gap-1" role="list" ref={listRef}>
-            {threads.map((thread) => (
-              <li key={thread.id} role="option" aria-selected={selectedThreadId === thread.id}>
-                <InboxListItem
-                  thread={thread}
-                  isSelected={selectedThreadId === thread.id}
-                  unreadCount={selectedThreadId === thread.id ? 0 : getUnread(thread)}
-                  preview={getPreview(thread)}
-                  onClick={() => onSelectThread(thread.id)}
-                />
-              </li>
-            ))}
-          </ul>
+          <div
+            style={{
+              height: `${rowVirtualizer.getTotalSize()}px`,
+              width: "100%",
+              position: "relative",
+            }}
+          >
+            {virtualItems.map((virtualRow) => {
+              const thread = threads[virtualRow.index];
+              return (
+                <div
+                  key={thread.id}
+                  ref={(el) => {
+                    if (el) rowRefs.current.set(virtualRow.index, el);
+                  }}
+                  role="option"
+                  aria-selected={selectedThreadId === thread.id}
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                  className="pb-1"
+                >
+                  <InboxListItem
+                    thread={thread}
+                    isSelected={selectedThreadId === thread.id}
+                    unreadCount={
+                      selectedThreadId === thread.id ? 0 : getUnread(thread)
+                    }
+                    preview={getPreview(thread)}
+                    onClick={() => onSelectThread(thread.id)}
+                  />
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>

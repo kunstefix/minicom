@@ -2,14 +2,23 @@
 
 import { useEffect, useRef } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { getThreadById, getThreadsForAgent } from "@/lib/supabase/queries";
+import {
+  getThreadById,
+  getThreadsForAgentWithPreview,
+} from "@/lib/supabase/queries";
 import { subscribeToInboxUpdates, unsubscribe } from "@/lib/supabase/subscriptions";
 import { useChatStore } from "@/store/chat-store";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export function useAgentInbox(agentId: string | null) {
-  const { hydrateThreads, setConnectionState, upsertMessage, upsertThread } =
-    useChatStore();
+  const {
+    hydrateThreads,
+    setConnectionState,
+    upsertMessage,
+    upsertThread,
+    bumpThreadUpdatedAt,
+    setThreadPreview,
+  } = useChatStore();
   const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
@@ -20,14 +29,14 @@ export function useAgentInbox(agentId: string | null) {
     (async () => {
       setConnectionState("connecting");
       try {
-        const threads = await getThreadsForAgent(supabase, agentId);
+        const threads = await getThreadsForAgentWithPreview(supabase, agentId);
         hydrateThreads(threads);
 
         const ch = subscribeToInboxUpdates(
           supabase,
           agentId,
           async () => {
-            const next = await getThreadsForAgent(supabase, agentId);
+            const next = await getThreadsForAgentWithPreview(supabase, agentId);
             hydrateThreads(next);
           },
           async (message) => {
@@ -35,6 +44,11 @@ export function useAgentInbox(agentId: string | null) {
             if (thread?.agentId !== agentId) return;
             upsertThread(thread);
             upsertMessage(message);
+            bumpThreadUpdatedAt(message.threadId);
+            setThreadPreview(
+              message.threadId,
+              message.content.slice(0, 50) || null
+            );
           }
         );
         channelRef.current = ch;
@@ -57,6 +71,8 @@ export function useAgentInbox(agentId: string | null) {
     setConnectionState,
     upsertMessage,
     upsertThread,
+    bumpThreadUpdatedAt,
+    setThreadPreview,
   ]);
 
   return {};

@@ -3,38 +3,31 @@ import type { Participant, Thread, Message, ThreadReadState } from "@/types/chat
 import {
   mapProfileRowToParticipant,
   mapThreadRowToThread,
+  mapThreadWithPreviewRowToThread,
   mapMessageRowToMessage,
   mapThreadReadRowToReadState,
 } from "./mappers";
+import type { ThreadWithPreviewRow } from "./mappers";
 
 export async function ensureVisitorProfile(
   supabase: SupabaseClient,
   visitorId: string,
   displayName?: string | null
 ): Promise<Participant> {
-  const { data: existing } = await supabase
+  const payload = {
+    id: visitorId,
+    role: "visitor" as const,
+    display_name: displayName ?? null,
+    avatar_url: null,
+  };
+  const { data, error } = await supabase
     .from("profiles")
-    .select("*")
-    .eq("id", visitorId)
-    .single();
-
-  if (existing) {
-    return mapProfileRowToParticipant(existing as Parameters<typeof mapProfileRowToParticipant>[0]);
-  }
-
-  const { data: inserted, error } = await supabase
-    .from("profiles")
-    .insert({
-      id: visitorId,
-      role: "visitor",
-      display_name: displayName ?? null,
-      avatar_url: null,
-    })
+    .upsert(payload, { onConflict: "id" })
     .select()
     .single();
 
   if (error) throw error;
-  return mapProfileRowToParticipant(inserted as Parameters<typeof mapProfileRowToParticipant>[0]);
+  return mapProfileRowToParticipant(data as Parameters<typeof mapProfileRowToParticipant>[0]);
 }
 
 export async function getAgentProfile(
@@ -64,6 +57,23 @@ export async function getThreadsForAgent(
 
   if (error) throw error;
   return (data ?? []).map((row) => mapThreadRowToThread(row as Parameters<typeof mapThreadRowToThread>[0]));
+}
+
+/** Threads for agent with latest message preview in one query (no N+1). Uses threads_with_preview view. */
+export async function getThreadsForAgentWithPreview(
+  supabase: SupabaseClient,
+  agentId: string
+): Promise<Thread[]> {
+  const { data, error } = await supabase
+    .from("threads_with_preview")
+    .select("*")
+    .eq("agent_id", agentId)
+    .order("updated_at", { ascending: false });
+
+  if (error) throw error;
+  return ((data ?? []) as ThreadWithPreviewRow[]).map(
+    mapThreadWithPreviewRowToThread
+  );
 }
 
 export async function getThreadById(

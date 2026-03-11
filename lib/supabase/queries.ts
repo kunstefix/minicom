@@ -90,6 +90,23 @@ export async function getThreadById(
   return mapThreadRowToThread(data as Parameters<typeof mapThreadRowToThread>[0]);
 }
 
+/** Find existing thread for (agent, visitor). Use before create so new tabs get the same thread. */
+export async function getThreadByAgentAndVisitor(
+  supabase: SupabaseClient,
+  agentId: string,
+  visitorId: string
+): Promise<Thread | null> {
+  const { data, error } = await supabase
+    .from("threads")
+    .select("*")
+    .eq("agent_id", agentId)
+    .eq("visitor_id", visitorId)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapThreadRowToThread(data as Parameters<typeof mapThreadRowToThread>[0]);
+}
+
 export async function getMessagesForThread(
   supabase: SupabaseClient,
   threadId: string,
@@ -106,6 +123,7 @@ export async function getMessagesForThread(
   return (data ?? []).map((row) => mapMessageRowToMessage(row as Parameters<typeof mapMessageRowToMessage>[0]));
 }
 
+/** Create or get existing thread for (agent, visitor). Uses upsert so new tabs get same thread. */
 export async function createThread(
   supabase: SupabaseClient,
   agentId: string,
@@ -113,7 +131,10 @@ export async function createThread(
 ): Promise<Thread> {
   const { data, error } = await supabase
     .from("threads")
-    .insert({ agent_id: agentId, visitor_id: visitorId })
+    .upsert(
+      { agent_id: agentId, visitor_id: visitorId, updated_at: new Date().toISOString() },
+      { onConflict: "agent_id,visitor_id", ignoreDuplicates: false }
+    )
     .select()
     .single();
 

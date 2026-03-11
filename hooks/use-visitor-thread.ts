@@ -4,7 +4,11 @@ import { useEffect } from "react";
 import { getOrCreateVisitor } from "@/lib/get-or-create-visitor";
 import { getDefaultAgent } from "@/lib/get-default-agent";
 import { createClient } from "@/lib/supabase/client";
-import { createThread, getMessagesForThread } from "@/lib/supabase/queries";
+import {
+  createThread,
+  getMessagesForThread,
+  getThreadByAgentAndVisitor,
+} from "@/lib/supabase/queries";
 import { useChatStore } from "@/store/chat-store";
 
 /**
@@ -23,6 +27,7 @@ export function useVisitorThread() {
   } = useChatStore();
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
     let cancelled = false;
 
     (async () => {
@@ -35,11 +40,21 @@ export function useVisitorThread() {
       upsertParticipant(agent);
 
       const supabase = createClient();
-      const existing = Object.values(threadsById).find(
-        (t) => t.visitorId === participant.id && t.agentId === agent.id
+      // Prefer DB lookup first so new tabs (empty store) always get the existing thread
+      let existing = await getThreadByAgentAndVisitor(
+        supabase,
+        agent.id,
+        participant.id
       );
+      if (!existing) {
+        existing =
+          Object.values(threadsById).find(
+            (t) => t.visitorId === participant.id && t.agentId === agent.id
+          ) ?? null;
+      }
 
       if (existing) {
+        upsertThread(existing);
         setVisitorThreadId(existing.id);
         const messages = await getMessagesForThread(supabase, existing.id);
         if (!cancelled) hydrateMessages(existing.id, messages);

@@ -1,16 +1,21 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { StatusDot } from "@/components/ui/status-dot";
 import { cn } from "@/lib/utils";
 
 export interface ThreadHeaderProps {
   title: string;
+  subtitle?: string;
+  status?: "online" | "offline" | "away";
   onBack?: () => void;
   className?: string;
 }
 
 export function ThreadHeader({
   title,
+  subtitle,
+  status,
   onBack,
   className,
 }: ThreadHeaderProps) {
@@ -41,7 +46,15 @@ export function ThreadHeader({
           </svg>
         </Button>
       )}
-      <p className="flex-1 truncate font-medium">{title}</p>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        {status != null && <StatusDot status={status} />}
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-medium">{title}</p>
+          {subtitle != null && (
+            <p className="truncate text-xs text-muted-foreground">{subtitle}</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

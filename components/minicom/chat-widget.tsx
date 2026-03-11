@@ -5,6 +5,7 @@ import { useChatStore } from "@/store/chat-store";
 import { selectMergedThreadMessages } from "@/store/selectors";
 import { useVisitorThread } from "@/hooks/use-visitor-thread";
 import { useChatThread } from "@/hooks/use-chat-thread";
+import { useThreadPresence } from "@/hooks/use-thread-presence";
 import { useSendMessage } from "@/hooks/use-send-message";
 import { useTypingState } from "@/hooks/use-typing-state";
 import { useTypingBroadcast } from "@/hooks/use-typing-broadcast";
@@ -41,6 +42,10 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
     ? useChatStore.getState().threadsById[visitorThreadId]?.agentId
     : null;
   const agent = agentId ? participantsById[agentId] : null;
+  const presence = useThreadPresence(visitorThreadId);
+  const agentOnline =
+    agentId != null &&
+    presence.some((p) => p.participantId === agentId);
 
   const removeOptimisticMessage = useChatStore((s) => s.removeOptimisticMessage);
   const { send } = useSendMessage(visitorThreadId);
@@ -91,7 +96,11 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
         title={agent?.displayName ?? "Support"}
         subtitle="We typically reply within a few minutes"
         status={
-          connectionState === "connected" ? "online" : "offline"
+          connectionState !== "connected"
+            ? "offline"
+            : agentOnline
+              ? "online"
+              : "offline"
         }
         onClose={onClose}
       />

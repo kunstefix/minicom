@@ -4,6 +4,7 @@ import { useShallow } from "zustand/react/shallow";
 import { useChatStore } from "@/store/chat-store";
 import { selectMergedThreadMessages } from "@/store/selectors";
 import { useChatThread } from "@/hooks/use-chat-thread";
+import { useThreadPresence } from "@/hooks/use-thread-presence";
 import { useSendMessage } from "@/hooks/use-send-message";
 import { useTypingState } from "@/hooks/use-typing-state";
 import { useTypingBroadcast } from "@/hooks/use-typing-broadcast";
@@ -48,6 +49,10 @@ export function ThreadPanel({
   const showTyping = typingByThread.some(
     (p) => p.participantId !== viewer?.id
   );
+  const presence = useThreadPresence(threadId);
+  const visitorOnline =
+    thread != null &&
+    presence.some((p) => p.participantId === thread.visitorId);
 
   const removeOptimisticMessage = useChatStore((s) => s.removeOptimisticMessage);
   const { send } = useSendMessage(threadId);
@@ -104,6 +109,8 @@ export function ThreadPanel({
     <div className={cn("flex flex-1 flex-col overflow-hidden", className)}>
       <ThreadHeader
         title={`Thread ${thread.visitorId.slice(0, 8)}…`}
+        subtitle={visitorOnline ? "Online" : "Offline"}
+        status={visitorOnline ? "online" : "offline"}
         onBack={onBack}
       />
       <MessageList

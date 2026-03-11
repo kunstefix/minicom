@@ -26,4 +26,13 @@ describe("Visitor chat", () => {
     await userEvent.click(sendBtn);
     expect(onSend).not.toHaveBeenCalled();
   });
+
+  it("MessageComposer calls onSend when user presses Enter (without Shift)", async () => {
+    const onSend = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+    render(<MessageComposer onSend={onSend} />);
+    const input = screen.getByRole("textbox", { name: /message input/i });
+    await user.type(input, "Hi there{Enter}");
+    expect(onSend).toHaveBeenCalledWith("Hi there");
+  });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mergeOptimisticAndConfirmed, replaceByClientId } from "@/lib/chat/reconcile-messages";
+import { mergeOptimisticAndConfirmed } from "@/lib/chat/reconcile-messages";
 import type { Message } from "@/types/chat";
 
 const baseMsg = (
@@ -27,15 +27,15 @@ describe("Out of order messages / reconciliation", () => {
     expect(merged[0].id).toBe("m1");
   });
 
-  it("replaceByClientId replaces optimistic by clientId with server message", () => {
-    const messages = [
-      baseMsg({ id: "", content: "Sending", clientId: "c1", status: "sending" }),
-      baseMsg({ id: "m2", content: "Other", createdAt: "2025-01-01T12:01:00Z" }),
+  it("mergeOptimisticAndConfirmed returns messages sorted by createdAt", () => {
+    const confirmed = [
+      baseMsg({ id: "m2", content: "Second", createdAt: "2025-01-01T12:01:00Z" }),
+      baseMsg({ id: "m1", content: "First", createdAt: "2025-01-01T12:00:00Z" }),
     ];
-    const server = baseMsg({ id: "m1", content: "Sending", clientId: "c1", status: "sent" });
-    const result = replaceByClientId(messages, "c1", server);
-    expect(result).toHaveLength(2);
-    const first = result.find((m) => m.clientId === "c1" || m.id === "m1");
-    expect(first?.id).toBe("m1");
+    const optimistic: Message[] = [];
+    const merged = mergeOptimisticAndConfirmed(confirmed, optimistic);
+    expect(merged).toHaveLength(2);
+    expect(merged[0].createdAt).toBe("2025-01-01T12:00:00Z");
+    expect(merged[1].createdAt).toBe("2025-01-01T12:01:00Z");
   });
 });

@@ -28,28 +28,3 @@ export function mergeOptimisticAndConfirmed(
       new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
   );
 }
-
-/**
- * Match optimistic message by clientId and replace with server message.
- */
-export function replaceByClientId(
-  messages: Message[],
-  clientId: string,
-  serverMessage: Message
-): Message[] {
-  const out: Message[] = [];
-  let replaced = false;
-  for (const m of messages) {
-    if (m.clientId === clientId && !replaced) {
-      out.push(serverMessage);
-      replaced = true;
-    } else if (m.id !== serverMessage.id) {
-      out.push(m);
-    }
-  }
-  if (!replaced) out.push(serverMessage);
-  return out.sort(
-    (a, b) =>
-      new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-}

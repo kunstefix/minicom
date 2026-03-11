@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { useChatStore } from "@/store/chat-store";
-import type { Thread, Message, Participant } from "@/types/chat";
+import type { Thread, Message } from "@/types/chat";
 
 describe("Chat store state transitions", () => {
   beforeEach(() => {
@@ -21,7 +21,7 @@ describe("Chat store state transitions", () => {
       updatedAt: new Date().toISOString(),
     };
     useChatStore.getState().upsertThread(thread);
-    expect(useChatStore.getState().threadsById["t1"]).toEqual(thread);
+    expect(useChatStore.getState().threadsById["t1"]).toEqual({ ...thread, preview: null });
   });
 
   it("upsertMessage appends message to thread", () => {
@@ -36,6 +36,21 @@ describe("Chat store state transitions", () => {
     useChatStore.getState().upsertMessage(msg);
     expect(useChatStore.getState().messagesByThreadId["t1"]).toHaveLength(1);
     expect(useChatStore.getState().messagesByThreadId["t1"][0].content).toBe("Hi");
+  });
+
+  it("upsertMessage creates messages array for new thread (first message)", () => {
+    const msg: Message = {
+      id: "m1",
+      threadId: "t-new",
+      senderId: "v1",
+      content: "First",
+      status: "sent",
+      createdAt: new Date().toISOString(),
+    };
+    expect(useChatStore.getState().messagesByThreadId["t-new"]).toBeUndefined();
+    useChatStore.getState().upsertMessage(msg);
+    expect(useChatStore.getState().messagesByThreadId["t-new"]).toHaveLength(1);
+    expect(useChatStore.getState().messagesByThreadId["t-new"][0].content).toBe("First");
   });
 
   it("addOptimisticMessage and reconcileOptimisticMessage replace by clientId", () => {

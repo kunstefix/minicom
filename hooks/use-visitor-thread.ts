@@ -28,7 +28,7 @@ export function useVisitorThread() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    let cancelled = false;
+    const cancelled = false;
 
     (async () => {
       const participant = await getOrCreateVisitor();

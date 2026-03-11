@@ -8,7 +8,6 @@ import {
   sendTypingStop,
   unsubscribeTyping,
 } from "@/lib/supabase/typing";
-import { useChatStore } from "@/store/chat-store";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 
 /** Send "typing" every this often while user is typing so the indicator stays visible */

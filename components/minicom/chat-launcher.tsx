@@ -85,7 +85,7 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
         variant="default"
         size="icon"
         className={cn(
-          "fixed bottom-6 right-6 z-50 size-14 rounded-full shadow-lg",
+          "fixed bottom-6 right-6 z-50 size-14 rounded-full border-2 border-background shadow-lg",
           className
         )}
         onClick={toggle}

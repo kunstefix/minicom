@@ -20,6 +20,12 @@ export default function Home() {
           </Link>
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" asChild>
+              <Link href="/auth/login">Sign in</Link>
+            </Button>
+            <Button size="sm" asChild>
+              <Link href="/auth/sign-up">Sign up</Link>
+            </Button>
+            <Button variant="ghost" size="sm" asChild>
               <a
                 href={REPO_URL}
                 target="_blank"
@@ -53,7 +59,7 @@ export default function Home() {
       </div>
 
       <footer className="w-full flex items-center justify-center border-t border-border py-8 text-sm text-muted-foreground">
-        <span>Minicom</span>
+        <span>MiniCom</span>
       </footer>
 
       <ChatLauncher />

@@ -20,8 +20,9 @@ export function LoginForm({
   className,
   ...props
 }: React.ComponentPropsWithoutRef<"div">) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  // Add default prefilled email and password here
+  const [email, setEmail] = useState("klemen.kunstek1@gmail.com");
+  const [password, setPassword] = useState("asdasd");
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -39,7 +40,7 @@ export function LoginForm({
       });
       if (error) throw error;
       // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/protected");
+      router.push("/agent");
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
     } finally {
@@ -68,6 +69,7 @@ export function LoginForm({
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="username"
                 />
               </div>
               <div className="grid gap-2">
@@ -86,6 +88,7 @@ export function LoginForm({
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="current-password"
                 />
               </div>
               {error && <p className="text-sm text-red-500">{error}</p>}

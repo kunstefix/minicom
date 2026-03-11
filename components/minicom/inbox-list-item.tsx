@@ -59,9 +59,8 @@ export function InboxListItem({
         <div className="flex items-center justify-between gap-2">
           <p
             className="truncate text-sm font-medium"
-            style={{ color: `hsl(${hue}, 70%, 60%)` }}
           >
-            Thread {thread.visitorId.slice(0, 8)}…
+            {thread.visitorId.slice(0, 8)}…
           </p>
           {lastMessageCreatedAt && (
             <span className="shrink-0 text-[11px] text-muted-foreground/70">

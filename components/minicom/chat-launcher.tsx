@@ -1,11 +1,21 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
+import {
+  subscribeToThreadMessages,
+  unsubscribe,
+} from "@/lib/supabase/subscriptions";
+import { playNotificationSound } from "@/lib/notification-sound";
+import { useChatStore } from "@/store/chat-store";
+import { selectUnreadCountForThread } from "@/store/selectors";
+import { useVisitorThread } from "@/hooks/use-visitor-thread";
 import { Button } from "@/components/ui/button";
 import { ChatWidget } from "./chat-widget";
+import { UnreadBadge } from "./unread-badge";
 import { saveWidgetOpen, loadWidgetOpen } from "@/lib/session";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
 export interface ChatLauncherProps {
   className?: string;
@@ -15,10 +25,34 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
   const [open, setOpen] = useState(false);
   const [closing, setClosing] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const messageChannelRef = useRef<RealtimeChannel | null>(null);
+
+  const { visitorThreadId } = useVisitorThread();
+  const viewer = useChatStore((s) => s.viewer);
+  const upsertMessage = useChatStore((s) => s.upsertMessage);
+  const unreadCount = useChatStore((s) =>
+    visitorThreadId && viewer
+      ? selectUnreadCountForThread(s, visitorThreadId, viewer.id)
+      : 0
+  );
 
   useEffect(() => {
     setOpen(loadWidgetOpen());
   }, []);
+
+  useEffect(() => {
+    if (open || !visitorThreadId || !viewer) return;
+    const supabase = createClient();
+    const ch = subscribeToThreadMessages(supabase, visitorThreadId, (msg) => {
+      upsertMessage(msg);
+      if (msg.senderId !== viewer.id) playNotificationSound();
+    });
+    messageChannelRef.current = ch;
+    return () => {
+      unsubscribe(ch).catch(() => {});
+      messageChannelRef.current = null;
+    };
+  }, [open, visitorThreadId, viewer?.id, upsertMessage]);
 
   const toggle = () => {
     if (closing) return;
@@ -57,6 +91,11 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
         onClick={toggle}
         aria-label={open ? "Close chat" : "Open chat"}
       >
+        {unreadCount > 0 && !open && (
+          <span className="absolute -right-1 -top-1">
+            <UnreadBadge count={unreadCount} />
+          </span>
+        )}
         {open ? (
           <svg
             xmlns="http://www.w3.org/2000/svg"

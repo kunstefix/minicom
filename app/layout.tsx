@@ -9,8 +9,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata: Metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "MiniCom — Next.js and Supabase Starter Kit",
-  description: "MiniCom chat widget and agent inbox. Built with Next.js and Supabase.",
+  title: "Minicom — Lightweight chat for your product",
+  description: "Embeddable chat widget and agent inbox. Talk to your users in real time.",
 };
 
 const geistSans = Geist({

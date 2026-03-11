@@ -66,7 +66,10 @@ export function ChatWidget({ onClose, className }: ChatWidgetProps) {
   if (!viewer) {
     return (
       <Card
-        className={cn("flex h-[400px] items-center justify-center", className)}
+        className={cn(
+          "flex h-[400px] min-h-[300px] max-h-[80vh] w-full max-w-[360px] items-center justify-center sm:w-[360px]",
+          className
+        )}
         role="status"
         aria-label="Loading chat"
       >

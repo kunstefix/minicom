@@ -1,6 +1,11 @@
 import Link from "next/link";
+import { Github } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { ChatLauncher } from "@/components/minicom/chat-launcher";
+
+const REPO_URL = "https://github.com/kunstefix/minicom";
+const ICON_SIZE = 16;
 
 export default function Home() {
   return (
@@ -13,7 +18,19 @@ export default function Home() {
           >
             Minicom
           </Link>
-          <ThemeSwitcher />
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" asChild>
+              <a
+                href={REPO_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View repository on GitHub"
+              >
+                <Github size={ICON_SIZE} className="text-muted-foreground" />
+              </a>
+            </Button>
+            <ThemeSwitcher />
+          </div>
         </div>
       </nav>
 

@@ -29,7 +29,7 @@ export function MessageStatusDot({
 
   return (
     <span
-      className={cn("inline-flex items-center gap-1", className)}
+      className={cn("inline-flex min-h-5 items-center gap-1", className)}
       title={STATUS_LABELS[status]}
       aria-label={STATUS_LABELS[status]}
     >

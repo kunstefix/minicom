@@ -47,7 +47,7 @@ export function MessageItem({
           </p>
         )}
         <p className="whitespace-pre-wrap break-words">{message.content}</p>
-        <div className="mt-1 flex items-center justify-end gap-1.5 flex-wrap">
+        <div className="mt-1 flex min-h-5 items-center justify-end gap-1.5 flex-wrap">
           <MessageStatusDot status={message.status} showLabel={message.status !== "sent"} />
           {showRetry && (
             <Button

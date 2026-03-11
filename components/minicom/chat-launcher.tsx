@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { ChatWidget } from "./chat-widget";
 import { saveWidgetOpen, loadWidgetOpen } from "@/lib/session";
@@ -13,21 +13,37 @@ export interface ChatLauncherProps {
 
 export function ChatLauncher({ className }: ChatLauncherProps) {
   const [open, setOpen] = useState(false);
+  const [closing, setClosing] = useState(false);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setOpen(loadWidgetOpen());
   }, []);
 
   const toggle = () => {
+    if (closing) return;
     const next = !open;
     setOpen(next);
     saveWidgetOpen(next);
   };
 
-  const close = () => {
-    setOpen(false);
+  const close = useCallback(() => {
+    setClosing(true);
     saveWidgetOpen(false);
-  };
+  }, []);
+
+  const handleAnimationEnd = useCallback(
+    (e: React.AnimationEvent<HTMLDivElement>) => {
+      if (e.animationName === "minicom-chat-out") {
+        setOpen(false);
+        setClosing(false);
+      }
+    },
+    []
+  );
+
+  const showWidget = open;
+  const isExiting = closing;
 
   return (
     <>
@@ -68,8 +84,15 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
           </svg>
         )}
       </Button>
-      {open && (
-        <div className="fixed bottom-24 right-6 z-40">
+      {showWidget && (
+        <div
+          ref={wrapperRef}
+          className={cn(
+            "fixed bottom-24 right-4 left-4 z-40 flex justify-end sm:left-auto sm:right-6",
+            isExiting ? "minicom-chat-exit" : "minicom-chat-enter"
+          )}
+          onAnimationEnd={handleAnimationEnd}
+        >
           <ChatWidget onClose={close} />
         </div>
       )}

@@ -124,16 +124,25 @@ export function ChatLauncher({ className }: ChatLauncherProps) {
         )}
       </Button>
       {showWidget && (
-        <div
-          ref={wrapperRef}
-          className={cn(
-            "fixed bottom-24 right-4 left-4 z-40 flex justify-end sm:left-auto sm:right-6",
-            isExiting ? "minicom-chat-exit" : "minicom-chat-enter"
-          )}
-          onAnimationEnd={handleAnimationEnd}
-        >
-          <ChatWidget onClose={close} />
-        </div>
+        <>
+          <button
+            type="button"
+            aria-label="Close chat"
+            className="fixed inset-0 z-30 cursor-default sm:z-[35]"
+            onClick={close}
+            tabIndex={-1}
+          />
+          <div
+            ref={wrapperRef}
+            className={cn(
+              "fixed bottom-24 right-4 left-4 z-40 flex justify-end sm:left-auto sm:right-6",
+              isExiting ? "minicom-chat-exit" : "minicom-chat-enter"
+            )}
+            onAnimationEnd={handleAnimationEnd}
+          >
+            <ChatWidget onClose={close} />
+          </div>
+        </>
       )}
     </>
   );

@@ -22,15 +22,17 @@ export function mapThreadRowToThread(row: ThreadRow): Thread {
   };
 }
 
-/** Row from get_threads_for_agent_with_preview RPC (thread columns + preview). */
+/** Row from threads_with_preview view (thread columns + preview + last_message_at). */
 export interface ThreadWithPreviewRow extends ThreadRow {
   preview: string | null;
+  last_message_at: string | null;
 }
 
 export function mapThreadWithPreviewRowToThread(row: ThreadWithPreviewRow): Thread {
   return {
     ...mapThreadRowToThread(row),
     preview: row.preview ?? null,
+    lastMessageAt: row.last_message_at ?? null,
   };
 }
 

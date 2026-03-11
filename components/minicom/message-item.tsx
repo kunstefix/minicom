@@ -2,6 +2,7 @@
 
 import type { Message } from "@/types/chat";
 import type { Participant } from "@/types/chat";
+import { formatMessageTime } from "@/lib/format-message-time";
 import { cn } from "@/lib/utils";
 import { MessageStatusDot } from "./message-status";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ export interface MessageItemProps {
   message: Message;
   isOwn: boolean;
   sender?: Participant | null;
+  /** Show short timestamp next to status (e.g. for last message). */
+  showTimestamp?: boolean;
   /** Called when user taps Retry for a failed message (own messages only). */
   onRetry?: (message: Message) => void;
   className?: string;
@@ -19,6 +22,7 @@ export function MessageItem({
   message,
   isOwn,
   sender,
+  showTimestamp = false,
   onRetry,
   className,
 }: MessageItemProps) {
@@ -61,6 +65,11 @@ export function MessageItem({
           )}
         >
           <MessageStatusDot status={message.status} showLabel={message.status !== "sent"} />
+          {showTimestamp && (
+            <span className="text-[11px] text-muted-foreground/70" aria-label={`Sent ${formatMessageTime(message.createdAt)}`}>
+              {formatMessageTime(message.createdAt)}
+            </span>
+          )}
           {showRetry && (
             <Button
               type="button"

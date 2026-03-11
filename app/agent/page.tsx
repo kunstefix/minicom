@@ -37,7 +37,7 @@ export default function AgentPage() {
           !showList && "hidden sm:flex"
         )}
       >
-        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border px-3 py-2">
+        <div className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-3 py-2">
           <h1 className="truncate font-semibold">Inbox</h1>
         </div>
         <InboxList

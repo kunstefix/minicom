@@ -61,6 +61,14 @@ export function InboxList({
       return last?.content?.slice(0, 50) ?? null;
     })();
 
+  const getLastMessageCreatedAt = (thread: Thread): string | null =>
+    thread.lastMessageAt ??
+    (() => {
+      const msgs = messagesByThreadId[thread.id] ?? [];
+      const last = msgs[msgs.length - 1];
+      return last?.createdAt ?? null;
+    })();
+
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (threads.length === 0) return;
@@ -111,7 +119,7 @@ export function InboxList({
       />
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto p-2"
+        className="flex-1 min-h-0 overflow-y-auto"
         role="list"
       >
         {threads.length === 0 ? (
@@ -154,6 +162,7 @@ export function InboxList({
                       selectedThreadId === thread.id ? 0 : getUnread(thread)
                     }
                     preview={getPreview(thread)}
+                    lastMessageCreatedAt={getLastMessageCreatedAt(thread)}
                     onClick={() => onSelectThread(thread.id)}
                     tabIndex={focusedIndex === virtualRow.index ? 0 : -1}
                     onFocus={() => setFocusedIndex(virtualRow.index)}

@@ -44,12 +44,13 @@ export function MessageList({
         <EmptyState title="No messages yet" description="Say hello!" />
       ) : (
         <>
-          {messages.map((msg) => (
+          {messages.map((msg, i) => (
             <MessageItem
               key={msg.id || msg.clientId}
               message={msg}
               isOwn={msg.senderId === currentUserId}
               sender={participantsById[msg.senderId]}
+              showTimestamp={i === messages.length - 1}
               onRetry={onRetryMessage}
             />
           ))}

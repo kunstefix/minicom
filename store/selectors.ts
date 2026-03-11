@@ -1,4 +1,4 @@
-import type { Message, Thread, TypingPayload } from "@/types/chat";
+import type { Message, Thread } from "@/types/chat";
 import type { PresencePayload } from "@/lib/supabase/presence";
 import type { ChatState } from "./chat-store";
 
@@ -47,21 +47,6 @@ export function selectSortedInbox(
   );
 }
 
-/**
- * Unread count for a participant (threads where last message is after lastReadAt).
- */
-export function selectUnreadCount(
-  state: ChatState,
-  participantId: string
-): number {
-  let count = 0;
-  for (const thread of Object.values(state.threadsById)) {
-    if (selectUnreadCountForThread(state, thread.id, participantId) > 0)
-      count++;
-  }
-  return count;
-}
-
 export function selectUnreadCountForThread(
   state: ChatState,
   threadId: string,
@@ -77,24 +62,6 @@ export function selectUnreadCountForThread(
   return messages.filter(
     (m) => m.senderId !== participantId && new Date(m.createdAt).getTime() > cutoff
   ).length;
-}
-
-export function selectSelectedThread(state: ChatState): Thread | null {
-  const id = state.selectedThreadId;
-  return id ? state.threadsById[id] ?? null : null;
-}
-
-export function selectSelectedThreadMessages(state: ChatState): Message[] {
-  const id = state.selectedThreadId;
-  return id ? selectMergedThreadMessages(state, id) : [];
-}
-
-export function selectCurrentTypingState(
-  state: ChatState,
-  threadId: string | null
-): TypingPayload[] {
-  if (!threadId) return [];
-  return state.typingByThreadId[threadId] ?? [];
 }
 
 export function selectCurrentPresenceState(

@@ -13,7 +13,6 @@ export function useSendMessage(threadId: string | null) {
     addOptimisticMessage,
     reconcileOptimisticMessage,
     markOptimisticMessageFailed,
-    removeOptimisticMessage,
     bumpThreadUpdatedAt,
     setThreadPreview,
   } = useChatStore();

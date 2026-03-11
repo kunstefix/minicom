@@ -1,132 +1,90 @@
-<a href="https://demo-nextjs-with-supabase.vercel.app/">
-  <img alt="Next.js and Supabase Starter Kit - the fastest way to build apps with Next.js and Supabase" src="https://demo-nextjs-with-supabase.vercel.app/opengraph-image.png">
-  <h1 align="center">Next.js and Supabase Starter Kit</h1>
-</a>
+# MiniCom
 
-<p align="center">
- The fastest way to build apps with Next.js and Supabase
-</p>
+A real-time support chat built with Next.js and Supabase. Visitors get a chat widget; agents use an inbox to handle conversations. Messages, presence, and typing are synced via Supabase Realtime.
 
-<p align="center">
-  <a href="#features"><strong>Features</strong></a> ·
-  <a href="#demo"><strong>Demo</strong></a> ·
-  <a href="#deploy-to-vercel"><strong>Deploy to Vercel</strong></a> ·
-  <a href="#clone-and-run-locally"><strong>Clone and run locally</strong></a> ·
-  <a href="#feedback-and-issues"><strong>Feedback and issues</strong></a>
-  <a href="#more-supabase-examples"><strong>More Examples</strong></a>
-</p>
-<br/>
+## Project overview
 
-## Features
+- **Visitor side**: Floating chat launcher and widget. Visitor identity is lightweight (stored locally); no sign-up required. Messages and typing are sent over Realtime.
+- **Agent side**: Inbox at `/agent` with thread list, thread view, presence indicators, unread counts, and real-time message/typing updates. Authentication required (demo account credentials are prefilled).
+- **Stack**: Next.js (App Router), Supabase (Postgres + Realtime), Zustand, Tailwind, Shadcn UI.
 
-- Works across the entire [Next.js](https://nextjs.org) stack
-  - App Router
-  - Pages Router
-  - Proxy
-  - Client
-  - Server
-  - It just works!
-- supabase-ssr. A package to configure Supabase Auth to use cookies
-- Password-based authentication block installed via the [Supabase UI Library](https://supabase.com/ui/docs/nextjs/password-based-auth)
-- Styling with [Tailwind CSS](https://tailwindcss.com)
-- Components with [shadcn/ui](https://ui.shadcn.com/)
-- Optional deployment with [Supabase Vercel Integration and Vercel deploy](#deploy-your-own)
-  - Environment variables automatically assigned to Vercel project
+## Architecture
 
-## Demo
 
-You can view a fully working demo at [demo-nextjs-with-supabase.vercel.app](https://demo-nextjs-with-supabase.vercel.app/).
 
-## Deploy to Vercel
+```mermaid
+flowchart TB
+  subgraph UI["Next.js App Router"]
+    subgraph LANDING["Landing /"]
+      L_content["Sign in · CTA"]
+      W["Chat widget"]
+    end
+    A["Agent /agent"]
+  end
 
-Vercel deployment will guide you through creating a Supabase account and project.
+  subgraph STORE["Zustand useChatStore"]
+    S["chat-store + selectors"]
+  end
 
-After installation of the Supabase integration, all relevant environment variables will be assigned to the project so the deployment is fully functioning.
+  subgraph HOOKS["Hooks"]
+    H_visitor["useVisitorThread"]
+    H_send["useSendMessage"]
+    H_agent["useAgentInbox"]
+    H_thread["useChatThread"]
+    H_presence["useThreadPresence"]
+    H_typing["useTypingState + useTypingBroadcast"]
+    H_helpers["useAutoScroll, useDebouncedTypingIndicator, useNetworkStatus"]
+  end
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&project-name=nextjs-with-supabase&repository-name=nextjs-with-supabase&demo-title=nextjs-with-supabase&demo-description=This+starter+configures+Supabase+Auth+to+use+cookies%2C+making+the+user%27s+session+available+throughout+the+entire+Next.js+app+-+Client+Components%2C+Server+Components%2C+Route+Handlers%2C+Server+Actions+and+Middleware.&demo-url=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2F&external-id=https%3A%2F%2Fgithub.com%2Fvercel%2Fnext.js%2Ftree%2Fcanary%2Fexamples%2Fwith-supabase&demo-image=https%3A%2F%2Fdemo-nextjs-with-supabase.vercel.app%2Fopengraph-image.png)
+  subgraph LIB["lib/supabase"]
+    LB["client, server, queries, subscriptions, presence, typing, mappers"]
+  end
 
-The above will also clone the Starter kit to your GitHub, you can clone that locally and develop locally.
+  subgraph SUPABASE["Supabase"]
+    AUTH["Auth"]
+    DB["Postgres"]
+    RT["Realtime"]
+  end
 
-If you wish to just develop locally and not deploy to Vercel, [follow the steps below](#clone-and-run-locally).
+  LANDING --- S
+  A --- S
+  S --- H_visitor
+  S --- H_agent
+  S --- H_thread
+  S --- H_send
+  S --- H_presence
+  S --- H_typing
+  H_visitor --- LB
+  H_agent --- LB
+  H_thread --- LB
+  H_send --- LB
+  H_typing --- LB
+  LB --- AUTH
+  LB --- DB
+  LB --- RT
+```
 
-## Clone and run locally
 
-1. You'll first need a Supabase project which can be made [via the Supabase dashboard](https://database.new)
+## State management: why Zustand
 
-2. Create a Next.js app using the Supabase Starter template npx command
+One global store fits this app: both the visitor widget and the agent inbox need the same data (threads, messages, presence, typing). A single source of truth avoids syncing two UIs and keeps Realtime subscription updates in one place. No provider nesting and no need for a separate async/query layer - hooks talk to Supabase and write into the store. Selectors in `store/selectors.ts` keep components independent of the raw state shape.
 
-   ```bash
-   npx create-next-app --example with-supabase with-supabase-app
-   ```
+## How AI helped
 
-   ```bash
-   yarn create next-app --example with-supabase with-supabase-app
-   ```
+First, I used ChatGPT for writing a specification which I carefully reviewed and edited. I discussed with it to point out potential pitfalls and shape it according to my needs. Then Cursor was used for implementation, guidance, planning, refactors, and tooling. I mostly reviewed the code, suggested edits an manually updated the details. 
 
-   ```bash
-   pnpm create next-app --example with-supabase with-supabase-app
-   ```
+Example prompts and the kinds of edits they led to:
 
-3. Use `cd` to change into the app's directory
+| Prompt (summary) | What was done |
+|------------------|----------------|
+| "Define a testing strategy and add tests: one for a UI interaction (submit on Enter in the composer), one for a store transition (upsertMessage for a new thread), and one for selector edge cases (merged messages, unread count)" | Vitest + Testing Library: tests for Enter in `MessageComposer`, `upsertMessage` for new thread, and selector edge cases in `tests/edge-case.test.ts`. |
+| "Presence is laggy and unreliable. Reimplement Supabase presence so we use join/leave event payloads to update state, not polling; add a heartbeat and remove any legacy presence helpers" | Reworked `lib/supabase/presence.ts`: `subscribeToThreadPresence` using join/leave event payloads, handlers before `subscribe()`, heartbeat; removed legacy presence helpers. |
+| "Add a ci safe typecheck as a script. exclude ignored and generated files from tsconfig" | `typecheck` script and `tsconfig.typecheck.json` excluding `.next`. |
 
-   ```bash
-   cd with-supabase-app
-   ```
+## Improvements with more time
 
-4. Rename `.env.example` to `.env.local` and update the following:
+- **Tests**: More coverage (selectors with more edge cases, integration tests for hooks and store, E2E for critical flows).
+- **Presence**: Stricter handling of reconnects and duplicate tabs.
+- **Errors and resilience**: Error boundaries around chat widget and agent inbox; retry/backoff for Realtime and key mutations; clearer offline/error states in the UI.
+- **Product**: Read receipts, typing debounce tuning, welcome message, "agent assigned" mesasge etc.
 
-  ```env
-  NEXT_PUBLIC_SUPABASE_URL=[INSERT SUPABASE PROJECT URL]
-  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=[INSERT SUPABASE PROJECT API PUBLISHABLE OR ANON KEY]
-  ```
-  > [!NOTE]
-  > This example uses `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, which refers to Supabase's new **publishable** key format.
-  > Both legacy **anon** keys and new **publishable** keys can be used with this variable name during the transition period. Supabase's dashboard may show `NEXT_PUBLIC_SUPABASE_ANON_KEY`; its value can be used in this example.
-  > See the [full announcement](https://github.com/orgs/supabase/discussions/29260) for more information.
-
-  Both `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` can be found in [your Supabase project's API settings](https://supabase.com/dashboard/project/_?showConnect=true)
-
-5. You can now run the Next.js local development server:
-
-   ```bash
-   pnpm dev
-   ```
-
-   The starter kit should now be running on [localhost:3000](http://localhost:3000/).
-
-6. This template comes with the default shadcn/ui style initialized. If you instead want other ui.shadcn styles, delete `components.json` and [re-install shadcn/ui](https://ui.shadcn.com/docs/installation/next)
-
-7. **MiniCom (chat):** Apply the database schema and seed for the chat widget and agent inbox:
-
-   ```bash
-   # In Supabase SQL editor or CLI, run:
-   # 1. supabase/schema.sql
-   # 2. supabase/seed.sql
-   ```
-
-   Then run the app: visitor chat is available via the floating launcher on `/`; agent inbox at `/agent`.
-
-> Check out [the docs for Local Development](https://supabase.com/docs/guides/getting-started/local-development) to also run Supabase locally.
-
-## MiniCom overview
-
-This project extends the starter with **MiniCom**: a visitor chat widget and agent inbox.
-
-- **Visitor:** Floating chat launcher on the homepage; anonymous visitor identity (stored in `localStorage`); one thread per visitor–agent pair; realtime messages, presence, typing.
-- **Agent:** `/agent` route with inbox sidebar and thread panel; demo agent id `demo-agent` (seeded in `supabase/seed.sql`).
-
-**Stack:** Next.js App Router, Supabase (Realtime + Postgres), Zustand for client state, Zod for validation, shadcn/ui.
-
-**Architecture:** Thin routes; business logic in `lib/`, `store/`, `hooks/`; MiniCom UI under `components/minicom/`. Supabase client from the template is reused; no duplicate browser client.
-
-**Tests:** `pnpm test` runs Vitest; unit tests for store, reconciliation, and MessageComposer (Supabase mocked at boundaries).
-
-## Feedback and issues
-
-Please file feedback and issues over on the [Supabase GitHub org](https://github.com/supabase/supabase/issues/new/choose).
-
-## More Supabase examples
-
-- [Next.js Subscription Payments Starter](https://github.com/vercel/nextjs-subscription-payments)
-- [Cookie-based Auth and the Next.js 13 App Router (free course)](https://youtube.com/playlist?list=PL5S4mPUpp4OtMhpnp93EFSo42iQ40XjbF)
-- [Supabase Auth and the Next.js App Router](https://github.com/supabase/supabase/tree/master/examples/auth/nextjs)
